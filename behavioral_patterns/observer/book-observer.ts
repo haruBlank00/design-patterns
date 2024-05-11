@@ -73,24 +73,115 @@ class Publication implements PublicationHouse {
   }
 }
 
+interface OptIn {
+  author: string[];
+  genre: string[];
+}
 class Customer implements Reader {
   private name: string = "";
+  private optIn: OptIn = {
+    author: [],
+    genre: [],
+  };
   constructor(name: string) {
     this.name = name;
   }
 
+  normalizeText(text: string) {
+    const newText = text.trim().toLowerCase();
+    const isFalsy = Boolean(newText) === false;
+    if (isFalsy) {
+      throw new Error(
+        `Please enter a valid text, not an empty one !!. \n text: ${text}`
+      );
+    }
+    return newText;
+  }
+
+  optInAuthor(author: string) {
+    this.optIn.author.push(this.normalizeText(author));
+    return this;
+  }
+  optOutAuthor(author: string) {
+    try {
+      const index = this.optIn.author.indexOf(this.normalizeText(author));
+      const doestNotExist = index === -1;
+      if (doestNotExist) {
+        console.log(
+          "Oh well. Looks like you're not subscribed to that autor..."
+        );
+      }
+      return this;
+    } catch (e) {
+      console.log((e as Error).message);
+    }
+  }
+
+  optInGenre(genre: string) {
+    this.optIn.genre.push(this.normalizeText(genre));
+    return this;
+  }
+
+  optOutGenre(genre: string) {
+    try {
+      const index = this.optIn.genre.indexOf(this.normalizeText(genre));
+      const doestNotExist = index === -1;
+      if (doestNotExist) {
+        console.log(
+          "Oh well. Looks like you're not subscribed to that genre..."
+        );
+      }
+      return this;
+    } catch (e) {
+      console.log((e as Error).message);
+    }
+  }
+
   update(subject: PublicationHouse, book: Book): void {
-    console.log(`Hey ${this.name}. We got a new book for you :).`);
-    console.log(`Book: ${book.title} by ${book.author} (${book.genre})`);
+    const { author, genre } = book;
+
+    const hasOptIn = this.hasOptIn();
+
+    if (!hasOptIn) {
+      console.group("\nUpdate with no OptIn");
+      console.log("name: ", this.name);
+      console.log(`Hey ${this.name}. We got a new book for you :).`);
+      console.log(`Book: ${book.title} by ${book.author} (${book.genre})`);
+      console.groupEnd();
+      return;
+    }
+
+    const isMyOptInAuthor = this.optIn.author.includes(
+      this.normalizeText(author)
+    );
+
+    const isMyOptInGenre = this.optIn.genre.includes(this.normalizeText(genre));
+
+    if (isMyOptInAuthor || isMyOptInGenre) {
+      console.group("\nUpdate for OPT in");
+      console.log(`Hey ${this.name}. We got a new book for you :).`);
+      console.log(`Book: ${book.title} by ${book.author} (${book.genre})`);
+      console.groupEnd();
+      return;
+    }
+  }
+
+  private hasOptIn() {
+    const hasOptInAuthor = this.optIn.author.length > 0;
+    const hasOptInGenre = this.optIn.genre.length > 0;
+    return hasOptInAuthor || hasOptInGenre;
   }
 }
 
 const penguinPublisher = new Publication();
 
 const reader1 = new Customer("Haru");
+const reader2 = new Customer("Baka");
+const reader3 = new Customer("Rose");
 
+reader3.optInAuthor("Rock Lee");
 penguinPublisher.attatch(reader1);
-
+penguinPublisher.attatch(reader2);
 penguinPublisher.addABook({
   title: "To Kill a Mockingbird",
   author: "Harper Lee",
@@ -99,35 +190,21 @@ penguinPublisher.addABook({
   genre: "Fiction",
 });
 
-/*  [
-    {
-      id: "1",
-      title: "To Kill a Mockingbird",
-      author: "Harper Lee",
-      description: "A novel set in the American South during the 1930s, dealing with the issues of racial injustice and moral growth.",
-      genre: "Fiction"
-    },
-    {
-      id: "2",
-      title: "1984",
-      author: "George Orwell",
-      description: "A dystopian novel set in a totalitarian regime, exploring themes of surveillance, propaganda, and individual freedom.",
-      genre: "Science Fiction"
-    },
-    {
-      id: "3",
-      title: "The Great Gatsby",
-      author: "F. Scott Fitzgerald",
-      description: "A novel depicting the decadence and moral decline of the American Dream in the 1920s.",
-      genre: "Fiction"
-    },
-    {
-      id: "4",
-      title: "Pride and Prejudice",
-      author: "Jane Austen",
-      description: "A romantic novel set in the English countryside, exploring themes of love, class, and marriage.",
-      genre: "Romance"
-    }
-  ];
-  
-  */
+console.log("*** *** ***");
+
+reader1.optInAuthor("Harper Lee");
+penguinPublisher.addABook({
+  title: "Not to kill a mocking bird",
+  author: "Rock Lee",
+  description:
+    "A novel set in the American South during the 1930s, dealing with the issues of racial injustice and moral growth.",
+  genre: "Fiction",
+});
+
+penguinPublisher.addABook({
+  title: "Not to kill a mocking bird",
+  author: "Harper Lee",
+  description:
+    "A novel set in the American South during the 1930s, dealing with the issues of racial injustice and moral growth.",
+  genre: "Fiction",
+});
